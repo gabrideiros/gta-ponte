@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Conectando…</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #111114; color: #e8e8ee; font: 15px/1.5 system-ui, sans-serif; }
+  main { max-width: 420px; padding: 24px; text-align: center; }
+  a { color: #ff5fa2; }
+</style>
+</head>
+<body>
+<main>
+  <p id="msg">Voltando pro painel…</p>
+</main>
+<script>
+  // Ponte do login (TikTok/Instagram só aceitam retorno em https): recebe ?code=…&state=… e repassa
+  // pro painel local. O endereço do painel e a rede vêm dentro do state, que o painel assinou.
+  (function () {
+    var msg = document.getElementById("msg");
+    try {
+      var q = new URLSearchParams(location.search);
+      var payload = (q.get("state") || "").split(".")[0];
+      var b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+      var j = JSON.parse(atob(b64 + "===".slice((b64.length + 3) % 4)));
+      var api = new URL(j.api);
+      var local = api.hostname === "localhost" || api.hostname === "127.0.0.1";
+      if (!(local || api.protocol === "https:") || !/^(tiktok|instagram|youtube)$/.test(j.p)) throw new Error("destino inválido");
+      var destino = api.origin + "/api/social/callback/" + j.p + location.search;
+      location.replace(destino);
+      setTimeout(function () {
+        msg.innerHTML = 'Se não voltou sozinho, <a href="' + destino.replace(/"/g, "&quot;") + '">clique aqui</a> (o painel precisa estar ligado).';
+      }, 2500);
+    } catch (e) {
+      msg.textContent = "Link inválido. Comece a conexão pelo painel (Configurações → Contas das redes).";
+    }
+  })();
+</script>
+</body>
+</html>
